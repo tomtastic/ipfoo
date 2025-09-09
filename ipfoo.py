@@ -36,8 +36,15 @@ def parse_input(input_str):
     # Truncated format (missing octets filled with zeros, last part goes to end)
     if re.match(r'^\d+(\.\d+){1,2}$', input_str):
         parts = input_str.split('.')
-        if len(parts) == 2 and int(parts[0]) <= 255 and int(parts[1]) <= 255:
-            return f"{parts[0]}.0.0.{parts[1]}"
+        if len(parts) == 2:
+            a, combined = int(parts[0]), int(parts[1])
+            if combined <= 255:
+                return f"{a}.0.0.{combined}"
+            else:
+                # Handle cases like 1.300 -> 1.0.1.44
+                b, remainder = divmod(combined, 256)
+                c, d = divmod(remainder, 1) if remainder < 256 else divmod(remainder, 256)
+                return f"{a}.0.{int(combined // 256)}.{combined % 256}"
         elif len(parts) == 3 and all(int(p) <= 255 for p in parts):
             return f"{parts[0]}.{parts[1]}.0.{parts[2]}"
 
@@ -64,10 +71,10 @@ def convert_ipv4(ip_str):
         ip_int = int(ip)
         octets = [int(x) for x in ip_str.split('.')]
 
-        print(f"Standard IPv4: {ip_str}")
-        print(f"32-bit decimal: {ip_int}")
-        print(f"32-bit hex: 0x{ip_int:08x}")
-        print(f"IPv6 mapped: ::ffff:{ip}")
+        print(f"{'Standard IPv4:':18} {ip_str}")
+        print(f"{'32-bit decimal:':18} {ip_int}")
+        print(f"{'32-bit hex:':18} 0x{ip_int:08x}")
+        print(f"{'IPv6 mapped:':18} ::ffff:{ip}")
 
         # Truncated format
         truncated_parts = []
@@ -77,16 +84,20 @@ def convert_ipv4(ip_str):
                 break
         truncated = '.'.join(truncated_parts)
         if truncated != ip_str:
-            print(f"Truncated: {truncated}")
+            print(f"{'Truncated:':18} {truncated}")
 
         # Integer overflow format
         if octets[2] >= 1 or octets[3] >= 1:
-            overflow = f"{octets[0]}.{octets[1]}.{octets[2] * 256 + octets[3]}"
-            print(f"Integer overflow: {overflow}")
+            combined = octets[2] * 256 + octets[3]
+            if octets[1] == 0:
+                overflow = f"{octets[0]}.{combined}"
+            else:
+                overflow = f"{octets[0]}.{octets[1]}.{combined}"
+            print(f"{'Overflow/truncate:':18} {overflow}")
 
         # Octal format
         octal = '.'.join(f"0{x:o}" if x >= 8 else f"{x:o}" for x in octets)
-        print(f"Octal: {octal}")
+        print(f"{'Octal:':18} {octal}")
 
     except ipaddress.AddressValueError:
         print(f"Error: Invalid IPv4 address '{ip_str}'")
@@ -102,8 +113,6 @@ if __name__ == "__main__":
     parsed_ip = parse_input(input_value)
 
     if parsed_ip:
-        print(f"Parsed as: {parsed_ip}")
-        print()
         convert_ipv4(parsed_ip)
     else:
         print(f"Error: Could not parse '{input_value}' as any known IP format")
