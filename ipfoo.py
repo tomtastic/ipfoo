@@ -25,7 +25,7 @@ def parse_input(input_str):
     if input_str.startswith('::ffff:'):
         return input_str[7:]
 
-    # Integer overflow format (a.b.xyz where xyz > 255) - check before ASDOT+
+    # Integer overflow format (a.b.xyz where xyz > 255)
     if re.match(r'^\d+\.\d+\.\d+$', input_str):
         parts = input_str.split('.')
         if len(parts) == 3 and int(parts[2]) > 255:
@@ -67,7 +67,6 @@ def convert_ipv4(ip_str):
         print(f"Standard IPv4: {ip_str}")
         print(f"32-bit decimal: {ip_int}")
         print(f"32-bit hex: 0x{ip_int:08x}")
-        print(f"ASDOT+ format: {ip_int >> 16}.{ip_int & 0xFFFF}")
         print(f"IPv6 mapped: ::ffff:{ip}")
 
         # Truncated format
@@ -103,7 +102,6 @@ if __name__ == "__main__":
     parsed_ip = parse_input(input_value)
 
     if parsed_ip:
-        print(f"Input: {input_value}")
         print(f"Parsed as: {parsed_ip}")
         print()
         convert_ipv4(parsed_ip)
